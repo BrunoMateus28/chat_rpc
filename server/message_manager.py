@@ -4,16 +4,17 @@ class MessageManager:
     def __init__(self):
         self.MAX_MESSAGES = 50  # Limite do histórico de mensagens públicas
 
-    def add_message(self, room_data, username, content, recipient=None):
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        msg_type = "unicast" if recipient else "broadcast"
-        message = {"type": msg_type, "origin": username, "recipient": recipient, "content": content, "timestamp": timestamp}
+    def send_message(self, username, room_name, message, recipient=None):
+        # Retrieve the room's data
+        room_data = self.room_manager.rooms.get(room_name)
+        if not room_data:
+            return f"Erro: A sala '{room_name}' não existe."
+        if username not in room_data["users"]:
+            return f"Erro: O usuário '{username}' não está conectado na sala '{room_name}'."
 
-        room_data["messages"].append(message)
-        if len(room_data["messages"]) > self.MAX_MESSAGES:
-            room_data["messages"].pop(0)
+        # Call add_message with the correct room data
+        return self.message_manager.add_message(room_data, username, message, recipient)
 
-        return f"Mensagem enviada às {timestamp}."
 
     def get_messages_for_user(self, room_data, username):
         return [msg for msg in room_data["messages"] if msg["type"] == "broadcast" or msg["recipient"] == username]
