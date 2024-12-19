@@ -44,7 +44,7 @@ class ChatClient:
                             for msg in messages:
                                 # Garantir que o timestamp seja tratado como um inteiro
                                 msg_timestamp = msg['timestamp']
-                                if msg_timestamp > self.last_message_timestamp:  # Comparar corretamente
+                                if msg_timestamp > self.last_message_timestamp and msg['origin']!=self.username:  # Comparar corretamente
                                     print(f"\n[{msg_timestamp}] {msg['origin']}: {msg['content']}")
                                     self.last_message_timestamp = msg_timestamp
                 except (xmlrpc.client.Fault, ConnectionError) as e:
