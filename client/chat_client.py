@@ -1,3 +1,4 @@
+from datetime import datetime
 import xmlrpc.client
 import threading
 import time
@@ -8,7 +9,8 @@ class ChatClient:
         self.binder = xmlrpc.client.ServerProxy(f"http://{binder_host}:{binder_port}")
         self.server = None
         self.connected_room = None
-        self.last_message_timestamp = 0
+        self.last_message_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Inicializa com a data e hora atual
+        self.discover_server()
         self.discover_server()
         self.register_user()
         self.lock = threading.Lock()  # Lock para proteger as requisições

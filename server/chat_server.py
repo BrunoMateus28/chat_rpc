@@ -71,7 +71,8 @@ class ChatServer:
             return "Sala não existe."
         if username not in self.rooms[room_name]["users"]:
             return "Usuário não está na sala."
-        
+        if len(self.rooms[room_name]['users'])<=1:
+            return "Você está sozinho na sala"
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         msg_type = "unicast" if recipient else "broadcast"
         message_data = {
@@ -82,10 +83,14 @@ class ChatServer:
             "timestamp": timestamp
         }
         self.rooms[room_name]["messages"].append(message_data)
+        
+        # Envia a mensagem para todos os outros usuários na sala, exceto o que enviou
         for user in self.rooms[room_name]["users"]:
-            if user != username:
+            if user != username:  # Não envia a mensagem para o próprio usuário
                 print(f"Nova mensagem para {user}: {message}")
+        
         return "Mensagem enviada."
+
 
 
     def receive_messages(self, username, room_name):
@@ -96,6 +101,8 @@ class ChatServer:
             if msg["type"] == "broadcast" or msg["destination"] == username
         ]
 
+    from datetime import datetime
+
     def receive_new_messages(self, username, room_name, last_timestamp):
         """
         Retorna apenas as mensagens enviadas após o último timestamp.
@@ -103,12 +110,19 @@ class ChatServer:
         if room_name not in self.rooms:
             return []
 
+        # Se last_timestamp é uma string, converta para datetime
+        if isinstance(last_timestamp, str):
+            last_timestamp = datetime.strptime(last_timestamp, "%Y-%m-%d %H:%M:%S")
+
         # Filtra as mensagens que têm timestamp maior que o last_timestamp
         new_messages = [
             msg for msg in self.rooms[room_name]["messages"]
-            if msg["timestamp"] > last_timestamp and (msg["type"] == "broadcast" or msg["destination"] == username)
+            if datetime.strptime(msg["timestamp"], "%Y-%m-%d %H:%M:%S") > last_timestamp and (
+                msg["type"] == "broadcast" or msg["destination"] == username
+            )
         ]
         return new_messages
+
 
     def list_rooms(self):
         return list(self.rooms.keys())
