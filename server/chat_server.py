@@ -18,15 +18,11 @@ class ChatServer:
         print("Servidor de chat iniciado em localhost:9000")
 
     def register_user(self, username):
-        try:
-            if username in self.users:
-                raise Exception("O nome de usuário já está em uso. Escolha outro.")
-            else:
-                self.users.add(username)
-                return "Usuário registrado com sucesso."
-        except Exception as e:
-            print(f"Erro ao registrar usuário: {e}")
-            return f"Erro ao registrar usuário: {e}"
+        if username in self.users:
+            raise Exception("O nome de usuário já está em uso. Escolha outro.")
+        else:
+            self.users.add(username)
+            return "Usuário registrado com sucesso."
 
     def unregister_user(self, username):
         try:

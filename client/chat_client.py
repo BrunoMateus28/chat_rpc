@@ -30,8 +30,6 @@ class ChatClient:
             except xmlrpc.client.Fault as fault:
                 print(f"Erro: {fault.faultString}")
                 print("Por favor, escolha outro username.")
-            except:
-                print("Nome já em uso. Por favor, escolha outro username.")
 
     def listen_for_messages(self):
         """Função que roda em uma thread para buscar novas mensagens em tempo real."""
