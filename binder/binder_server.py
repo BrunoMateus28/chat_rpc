@@ -22,7 +22,11 @@ class Binder:
 
     def run(self):
         """Executa o servidor do Binder."""
-        self.server.serve_forever()
+        try:
+            self.server.serve_forever()
+        except Exception as e:
+            print(f"Erro inesperado no servidor do Binder: {e}. O servidor continuará tentando.")
+
 
 if __name__ == "__main__":
     binder = Binder()

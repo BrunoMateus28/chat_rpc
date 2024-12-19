@@ -58,47 +58,51 @@ class ChatClient:
         message_thread.start()
 
         while True:
-            cmd = input("Enter command (create, join, send, list, users, exit): ").lower()
-            if cmd == "create":
-                room_name = input("Room name: ")
-                print(self.server.create_room(room_name))
-            elif cmd == "join":
-                room_name = input("Room name: ")
-                response = self.server.join_room(self.username, room_name)
-                if "users" in response:
-                    self.connected_room = room_name
-                    print(f"You have joined the room '{room_name}'.")
-                    # Mostra o histórico de mensagens
-                    print("Last 50 messages:")
-                    for msg in response["messages"]:
-                        print(f"[{msg['timestamp']}] {msg['origin']} -> {msg['content']}")
-                    # Atualiza o timestamp da última mensagem recebida
-                    if response["messages"]:
-                        self.last_message_timestamp = response["messages"][-1]["timestamp"]
+            try:
+                cmd = input("Enter command (create, join, send, list, users, exit): ").lower()
+                if cmd == "create":
+                    room_name = input("Room name: ")
+                    print(self.server.create_room(room_name))
+                elif cmd == "join":
+                    room_name = input("Room name: ")
+                    response = self.server.join_room(self.username, room_name)
+                    if "users" in response:
+                        self.connected_room = room_name
+                        print(f"You have joined the room '{room_name}'.")
+                        # Mostra o histórico de mensagens
+                        print("Last 50 messages:")
+                        for msg in response["messages"]:
+                            print(f"[{msg['timestamp']}] {msg['origin']} -> {msg['content']}")
+                        # Atualiza o timestamp da última mensagem recebida
+                        if response["messages"]:
+                            self.last_message_timestamp = response["messages"][-1]["timestamp"]
+                    else:
+                        print(response)
+                elif cmd == "send":
+                    if self.connected_room is None:
+                        print("You are not connected to any room.")
+                        continue
+                    msg = input("Message: ")
+                    with self.lock:
+                        print(self.server.send_message(self.username, self.connected_room, msg))
+                elif cmd == "list":
+                    print("Available rooms:")
+                    print(self.server.list_rooms())
+                elif cmd == "users":
+                    if self.connected_room is None:
+                        print("You are not connected to any room.")
+                        continue
+                    print(f"Users in the room '{self.connected_room}':")
+                    print(self.server.list_users(self.connected_room))
+                elif cmd == "exit":
+                    print("Exiting the client...")
+                    self.server.unregister_user(self.username)
+                    break
                 else:
-                    print(response)
-            elif cmd == "send":
-                if self.connected_room is None:
-                    print("You are not connected to any room.")
-                    continue
-                msg = input("Message: ")
-                with self.lock:
-                    print(self.server.send_message(self.username, self.connected_room, msg))
-            elif cmd == "list":
-                print("Available rooms:")
-                print(self.server.list_rooms())
-            elif cmd == "users":
-                if self.connected_room is None:
-                    print("You are not connected to any room.")
-                    continue
-                print(f"Users in the room '{self.connected_room}':")
-                print(self.server.list_users(self.connected_room))
-            elif cmd == "exit":
-                print("Exiting the client...")
-                self.server.unregister_user(self.username)
-                break
-            else:
-                print("Unknown command. Please enter one of the following: create, join, send, list, users, exit.")
+                    print("Unknown command. Please enter one of the following: create, join, send, list, users, exit.")
+            except Exception as e:
+                print(f"Erro inesperado: {e}. O programa continuará a execução.")
+
 
 if __name__ == "__main__":
     client = ChatClient()
