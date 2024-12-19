@@ -1,3 +1,4 @@
+import time
 import xmlrpc.server
 import threading
 from datetime import datetime
@@ -34,12 +35,15 @@ class ChatServer:
                 for room in self.rooms.values():
                     if username in room["users"]:
                         room["users"].remove(username)
+                        # Atualiza o timestamp da última interação
+                        room["last_interaction"] = datetime.now()
                 return "Usuário desconectado com sucesso."
             else:
                 return "Usuário não encontrado."
         except Exception as e:
-            print(f"Erro ao desregistrar usuário: {e}")
-            return f"Erro ao desregistrar usuário: {e}"
+            print(f"Erro ao tentar desconectar o usuário: {e}")
+            return f"Erro ao tentar desconectar o usuário: {e}"
+
 
     def register_procedures(self):
         try:
@@ -54,23 +58,43 @@ class ChatServer:
             print(f"Erro ao registrar procedimentos: {e}")
 
     def create_room(self, room_name):
-        try:
-            if room_name in self.rooms:
-                return "Sala já existe."
-            self.rooms[room_name] = {"users": [], "messages": []}
-            return f"Sala '{room_name}' criada."
-        except Exception as e:
-            print(f"Erro ao criar sala: {e}")
-            return "Erro interno ao criar sala."
+        if room_name in self.rooms:
+            return "Sala já existe."
+        
+        # Adiciona o timestamp da última interação
+        self.rooms[room_name] = {
+            "users": [],
+            "messages": [],
+            "last_interaction": datetime.now()  # Adiciona a data de criação
+        }
+        return f"Sala '{room_name}' criada."
+
+    def check_empty_rooms(self):
+        while True:
+            try:
+                current_time = datetime.now()
+                for room_name, room_data in list(self.rooms.items()):
+                    if not room_data["users"] and (current_time - room_data["last_interaction"]).total_seconds() > 300:
+                        del self.rooms[room_name]  # Remove a sala
+                        print(f"Sala '{room_name}' removida por inatividade.")
+            except Exception as e:
+                print(f"Erro ao verificar salas vazias: {e}")
+            time.sleep(60)  # Verifica a cada 60 segundos
+
 
     def join_room(self, username, room_name):
         try:
             if username in self.users:
                 if room_name in self.rooms:
+                    # Atualiza a lista de usuários na sala
                     for room in self.rooms.values():
                         if username in room["users"]:
                             room["users"].remove(username)
                     self.rooms[room_name]["users"].append(username)
+                    
+                    # Atualiza o timestamp da última interação
+                    self.rooms[room_name]["last_interaction"] = datetime.now()
+                    
                     return {
                         "users": self.rooms[room_name]["users"],
                         "messages": self.rooms[room_name]["messages"][-50:]  # Últimas 50 mensagens
@@ -80,8 +104,9 @@ class ChatServer:
             else:
                 return "Usuário não registrado."
         except Exception as e:
-            print(f"Erro ao juntar na sala: {e}")
-            return f"Erro interno ao tentar entrar na sala: {e}"
+            print(f"Erro ao tentar entrar na sala: {e}")
+            return f"Erro ao tentar entrar na sala: {e}"
+
 
     def send_message(self, username, room_name, message, recipient=None):
         try:
@@ -177,6 +202,10 @@ class ChatServer:
 
     def run(self):
         try:
+            # Inicia a thread para verificar salas vazias
+            threading.Thread(target=self.check_empty_rooms, daemon=True).start()
+
+            # Inicia o servidor principal
             self.server.serve_forever()
         except Exception as e:
             print(f"Erro inesperado no servidor: {e}. O servidor continuará tentando.")
