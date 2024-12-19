@@ -59,18 +59,18 @@ class ChatClient:
 
         while True:
             try:
-                cmd = input("Enter command (create, join, send, list, users, exit): ").lower()
+                cmd = input("Use um comando (create, join, send, list, users, exit): ").lower()
                 if cmd == "create":
-                    room_name = input("Room name: ")
+                    room_name = input("Nome da sala: ")
                     print(self.server.create_room(room_name))
                 elif cmd == "join":
-                    room_name = input("Room name: ")
+                    room_name = input("Nome da sala: ")
                     response = self.server.join_room(self.username, room_name)
                     if "users" in response:
                         self.connected_room = room_name
-                        print(f"You have joined the room '{room_name}'.")
+                        print(f"Voce entrou na sala '{room_name}'.")
                         # Mostra o histórico de mensagens
-                        print("Last 50 messages:")
+                        print("Ultimas mensagens:")
                         for msg in response["messages"]:
                             if(msg["destination"]=="" or msg["destination"]==None):
                                 print(f"[{msg['timestamp']}] {msg['origin']} -> {msg['content']}")
@@ -81,27 +81,27 @@ class ChatClient:
                         print(response)
                 elif cmd == "send":
                     if self.connected_room is None:
-                        print("You are not connected to any room.")
+                        print("Voce nao esta em nenhuma sala.")
                         continue
-                    msg = input("Message: ")
+                    msg = input("Mensagem: ")
                     recipient = input("Usuario(se quiser mensagem privada): ")
                     with self.lock:
                         print(self.server.send_message(self.username, self.connected_room, msg, recipient))
                 elif cmd == "list":
-                    print("Available rooms:")
+                    print("Salas existentes:")
                     print(self.server.list_rooms())
                 elif cmd == "users":
                     if self.connected_room is None:
-                        print("You are not connected to any room.")
+                        print("Voce nao esta em nenhuma sala.")
                         continue
-                    print(f"Users in the room '{self.connected_room}':")
+                    print(f"Usuarios na sala: '{self.connected_room}':")
                     print(self.server.list_users(self.connected_room))
                 elif cmd == "exit":
-                    print("Exiting the client...")
+                    print("Desconectando o Cliente...")
                     self.server.unregister_user(self.username)
                     break
                 else:
-                    print("Unknown command. Please enter one of the following: create, join, send, list, users, exit.")
+                    print("Comando desconhecido. Use um dos seguintes: create, join, send, list, users, exit.")
             except Exception as e:
                 print(f"Erro inesperado: {e}. O programa continuará a execução.")
 
