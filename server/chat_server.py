@@ -8,7 +8,7 @@ class ChatServer:
         self.users = set()
         self.rooms = {}
         self.binder = xmlrpc.client.ServerProxy(f"http://{binder_host}:{binder_port}")
-        self.server = xmlrpc.server.SimpleXMLRPCServer(("localhost", 9000))
+        self.server = xmlrpc.server.SimpleXMLRPCServer(("localhost", 9000),allow_none=True)
         
         # Registro de métodos no Binder
         self.register_procedures()
@@ -31,9 +31,13 @@ class ChatServer:
         """
         if username in self.users:
             self.users.remove(username)  # Remove o usuário do conjunto
+            for room in self.rooms.values():
+                if username in room["users"]:
+                    room["users"].remove(username)
             return "Usuário desconectado com sucesso."
         else:
             return "Usuário não encontrado. Nenhuma ação realizada."
+
 
     def register_procedures(self):
         """Registra os métodos do servidor no Binder."""
@@ -44,16 +48,22 @@ class ChatServer:
             self.binder.register_procedure(proc, "localhost", 9000)
             self.server.register_function(getattr(self, proc), proc)
 
-    # Métodos do Servidor
     def create_room(self, room_name):
+        """
+        Cria uma nova sala de chat com o nome especificado.
+        Retorna uma mensagem de sucesso ou erro caso a sala já exista.
+        """
         if room_name in self.rooms:
             return "Sala já existe."
         self.rooms[room_name] = {"users": [], "messages": []}
-        return f"Sala '{room_name}' criada."
+        return f"Sala '{room_name}' criada."                   
 
     def join_room(self, username, room_name):
         if username in self.users:
             if room_name in self.rooms:
+                for room in self.rooms.values():
+                    if username in room["users"]:
+                        room["users"].remove(username)
                 self.rooms[room_name]["users"].append(username)
                 return {
                     "users": self.rooms[room_name]["users"],
@@ -67,6 +77,8 @@ class ChatServer:
     def send_message(self, username, room_name, message, recipient=None):
         if room_name not in self.rooms:
             return "Sala não existe."
+        if username not in self.rooms[room_name]["users"]:
+            return "Usuário não está na sala."
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         msg_type = "unicast" if recipient else "broadcast"
         message_data = {
@@ -79,6 +91,7 @@ class ChatServer:
         self.rooms[room_name]["messages"].append(message_data)
         return "Mensagem enviada."
 
+
     def receive_messages(self, username, room_name):
         if room_name not in self.rooms:
             return []
@@ -89,11 +102,20 @@ class ChatServer:
 
     def list_rooms(self):
         return list(self.rooms.keys())
-
+    
     def list_users(self, room_name):
+        """
+        Lista os usuários de uma sala específica. Retorna uma mensagem apropriada
+        se a sala não existir ou se nenhuma sala foi criada.
+        """
+        if not self.rooms:  # Verifica se o dicionário de salas está vazio
+            return "Nenhuma sala criada ainda."
+        
         if room_name in self.rooms:
-            return self.rooms[room_name]["users"]
-        return "Sala não existe."
+            return self.rooms[room_name]["users"]  # Retorna a lista de usuários da sala
+        
+        return "Sala não encontrada."
+
 
     def run(self):
         self.server.serve_forever()

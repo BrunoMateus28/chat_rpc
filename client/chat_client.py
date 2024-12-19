@@ -26,30 +26,40 @@ class ChatClient:
                 print("Por favor, escolha outro username.")
 
     def interact(self):
-        """Interface principal para interação do usuário."""
-        print(f"Bem-vindo, {self.username}!")
         while True:
-            cmd = input("Comando (create, join, send, list, users, exit): ").lower()
+            cmd = input("Enter command (create, join, send, list, users, exit): ").lower()
             if cmd == "create":
-                room_name = input("Nome da sala: ")
+                room_name = input("Room name: ")
                 print(self.server.create_room(room_name))
             elif cmd == "join":
-                room_name = input("Nome da sala: ")
-                self.connected_room = room_name
-                print(self.server.join_room(self.username, room_name))
+                room_name = input("Room name: ")
+                response = self.server.join_room(self.username, room_name)
+                if "users" in response:
+                    self.connected_room = room_name
+                    print(f"You have joined the room '{room_name}'.")
+                else:
+                    print(response)
             elif cmd == "send":
-                msg = input("Mensagem: ")
-                recipient = input("Destinatário (ou Enter para todos): ")
-                print(self.server.send_message(self.username, self.connected_room, msg, recipient or None))
+                if self.connected_room is None:
+                    print("You are not connected to any room.")
+                    continue
+                msg = input("Message: ")
+                print(self.server.send_message(self.username, self.connected_room, msg))
             elif cmd == "list":
+                print("Available rooms:")
                 print(self.server.list_rooms())
             elif cmd == "users":
+                if self.connected_room is None:
+                    print("You are not connected to any room.")
+                    continue
+                print(f"Users in the room '{self.connected_room}':")
                 print(self.server.list_users(self.connected_room))
             elif cmd == "exit":
-                print("Saindo...")
-                response = self.server.unregister_user(self.username)
-                print(response)
+                print("Exiting the client...")
+                self.server.unregister_user(self.username)
                 break
+            else:
+                print("Unknown command. Please enter one of the following: create, join, send, list, users, exit.")
 
 if __name__ == "__main__":
     client = ChatClient()

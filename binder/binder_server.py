@@ -4,7 +4,7 @@ import xmlrpc.client
 
 class Binder:
     def __init__(self, host="localhost", port=5000):
-        self.server = xmlrpc.server.SimpleXMLRPCServer((host, port))
+        self.server = xmlrpc.server.SimpleXMLRPCServer((host, port),allow_none=True)
         self.procedures = {}
         self.server.register_function(self.register_procedure, "register_procedure")
         self.server.register_function(self.lookup_procedure, "lookup_procedure")
