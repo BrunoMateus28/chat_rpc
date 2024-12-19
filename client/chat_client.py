@@ -56,54 +56,57 @@ class ChatClient:
         message_thread = threading.Thread(target=self.listen_for_messages)
         message_thread.daemon = True  # Para que a thread seja encerrada quando o programa terminar
         message_thread.start()
-
         while True:
-            try:
-                cmd = input("Use um comando (create, join, send, list, users, exit): ").lower()
-                if cmd == "create":
-                    room_name = input("Nome da sala: ")
-                    print(self.server.create_room(room_name))
-                elif cmd == "join":
-                    room_name = input("Nome da sala: ")
-                    response = self.server.join_room(self.username, room_name)
-                    if "users" in response:
-                        self.connected_room = room_name
-                        print(f"Voce entrou na sala '{room_name}'.")
-                        # Mostra o histórico de mensagens
-                        print("Ultimas mensagens:")
-                        for msg in response["messages"]:
-                            if(msg["destination"]=="" or msg["destination"]==None):
-                                print(f"[{msg['timestamp']}] {msg['origin']} -> {msg['content']}")
-                        # Atualiza o timestamp da última mensagem recebida
-                        if response["messages"]:
-                            self.last_message_timestamp = response["messages"][-1]["timestamp"]
+            with self.lock:
+                try:
+                    cmd = input("Use um comando (create, join, send, list, users, exit): ").lower()
+                    if cmd == "create":
+                        room_name = input("Nome da sala: ")
+                        print(self.server.create_room(room_name))
+                    elif cmd == "join":
+                        room_name = input("Nome da sala: ")
+                        response = self.server.join_room(self.username, room_name)
+                        if "users" in response:
+                            self.connected_room = room_name
+                            print(f"Voce entrou na sala '{room_name}'.")
+                            # Mostra o histórico de mensagens
+                            print("Ultimas mensagens:")
+                            for msg in response["messages"]:
+                                if(msg["destination"]=="" or msg["destination"]==None):
+                                    print(f"[{msg['timestamp']}] {msg['origin']} -> {msg['content']}")
+                            # Atualiza o timestamp da última mensagem recebida
+                            if response["messages"]:
+                                self.last_message_timestamp = response["messages"][-1]["timestamp"]
+                        else:
+                            print(response)
+                    elif cmd == "send":
+                        if self.connected_room is None:
+                            print("Voce nao esta em nenhuma sala.")
+                            continue
+                        msg = input("Mensagem: ")
+                        recipient = input("Usuario(se quiser mensagem privada): ")
+                        with self.lock:
+                            print(self.server.send_message(self.username, self.connected_room, msg, recipient))
+                    elif cmd == "list":
+                        print("Salas existentes:")
+                        print(self.server.list_rooms())
+                    elif cmd == "users":
+                        if self.connected_room is None:
+                            print("Voce nao esta em nenhuma sala.")
+                            continue
+                        print(f"Usuarios na sala: '{self.connected_room}':")
+                        print(self.server.list_users(self.connected_room))
+                    elif cmd == "exit":
+                        print("Desconectando o Cliente...")
+                        self.server.unregister_user(self.username)
+                        break
                     else:
-                        print(response)
-                elif cmd == "send":
-                    if self.connected_room is None:
-                        print("Voce nao esta em nenhuma sala.")
-                        continue
-                    msg = input("Mensagem: ")
-                    recipient = input("Usuario(se quiser mensagem privada): ")
-                    with self.lock:
-                        print(self.server.send_message(self.username, self.connected_room, msg, recipient))
-                elif cmd == "list":
-                    print("Salas existentes:")
-                    print(self.server.list_rooms())
-                elif cmd == "users":
-                    if self.connected_room is None:
-                        print("Voce nao esta em nenhuma sala.")
-                        continue
-                    print(f"Usuarios na sala: '{self.connected_room}':")
-                    print(self.server.list_users(self.connected_room))
-                elif cmd == "exit":
-                    print("Desconectando o Cliente...")
-                    self.server.unregister_user(self.username)
-                    break
-                else:
-                    print("Comando desconhecido. Use um dos seguintes: create, join, send, list, users, exit.")
-            except Exception as e:
-                print(f"Erro inesperado: {e}. O programa continuará a execução.")
+                        print("Comando desconhecido. Use um dos seguintes: create, join, send, list, users, exit.")
+                except Exception as e:
+                    print(f"Erro inesperado: {e}. O programa continuará a execução.")
+                    message_thread = threading.Thread(target=self.listen_for_messages)
+                    message_thread.daemon = True  # Para que a thread seja encerrada quando o programa terminar
+                    message_thread.start()
 
 
 if __name__ == "__main__":
