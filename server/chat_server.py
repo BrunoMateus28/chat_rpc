@@ -101,13 +101,19 @@ class ChatServer:
                 "content": message,
                 "timestamp": timestamp
             }
-            self.rooms[room_name]["messages"].append(message_data)
-
-            # Envia a mensagem para todos os outros usuários na sala, exceto o que enviou
-            for user in self.rooms[room_name]["users"]:
-                if user != username:  # Não envia a mensagem para o próprio usuário
-                    print(f"Nova mensagem para {user}: {message}")
-
+            if(recipient==None or recipient=="" or recipient in self.rooms[room_name]['users']):
+                self.rooms[room_name]["messages"].append(message_data)
+            else:
+                return(f"Usuario {recipient} não encontrado")
+            # Envia a mensagem para os outros usuários na sala, dependendo do tipo de mensagem
+            if msg_type == "broadcast":
+                for user in self.rooms[room_name]["users"]:
+                    if user != username:  # Não envia a mensagem para o próprio usuário
+                        print(f"Nova mensagem para {user}: {message}")
+            elif msg_type == "unicast" and recipient:
+                # Envia a mensagem somente para o destinatário
+                print(f"Nova mensagem privada para {recipient}: {message}")
+            
             return "Mensagem enviada."
         except Exception as e:
             print(f"Erro ao enviar mensagem: {e}")

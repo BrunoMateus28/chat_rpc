@@ -72,7 +72,8 @@ class ChatClient:
                         # Mostra o histórico de mensagens
                         print("Last 50 messages:")
                         for msg in response["messages"]:
-                            print(f"[{msg['timestamp']}] {msg['origin']} -> {msg['content']}")
+                            if(msg["destination"]=="" or msg["destination"]==None):
+                                print(f"[{msg['timestamp']}] {msg['origin']} -> {msg['content']}")
                         # Atualiza o timestamp da última mensagem recebida
                         if response["messages"]:
                             self.last_message_timestamp = response["messages"][-1]["timestamp"]
@@ -83,8 +84,9 @@ class ChatClient:
                         print("You are not connected to any room.")
                         continue
                     msg = input("Message: ")
+                    recipient = input("Usuario(se quiser mensagem privada): ")
                     with self.lock:
-                        print(self.server.send_message(self.username, self.connected_room, msg))
+                        print(self.server.send_message(self.username, self.connected_room, msg, recipient))
                 elif cmd == "list":
                     print("Available rooms:")
                     print(self.server.list_rooms())
