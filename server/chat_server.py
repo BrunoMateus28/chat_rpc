@@ -122,6 +122,8 @@ class ChatServer:
                 "content": message,
                 "timestamp": timestamp
             }
+            # Atualiza o timestamp da última interação
+            self.rooms[room_name]["last_interaction"] = datetime.now()
             if(recipient==None or recipient=="" or recipient in self.rooms[room_name]['users']):
                 self.rooms[room_name]["messages"].append(message_data)
             else:
